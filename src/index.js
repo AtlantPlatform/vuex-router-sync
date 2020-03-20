@@ -1,61 +1,64 @@
 exports.sync = function (store, router, options) {
-  const moduleName = (options || {}).moduleName || 'route'
+  const moduleName = (options || {}).moduleName || 'route';
 
   store.registerModule(moduleName, {
     namespaced: true,
     state: cloneRoute(router.currentRoute),
     mutations: {
       'ROUTE_CHANGED' (state, transition) {
-        store.state[moduleName] = cloneRoute(transition.to, transition.from)
+        store.state[moduleName] = cloneRoute(transition.to, transition.from);
       }
+    },
+    actions: {
+      'push': function (state, params) { router.push(params); }
     }
-  })
+  });
 
-  let isTimeTraveling = false
-  let currentPath
+  let isTimeTraveling = false;
+  let currentPath;
 
   // sync router on store change
   const storeUnwatch = store.watch(
     state => state[moduleName],
     route => {
-      const { fullPath } = route
+      const { fullPath } = route;
       if (fullPath === currentPath) {
-        return
+        return;
       }
       if (currentPath != null) {
-        isTimeTraveling = true
-        router.push(route)
+        isTimeTraveling = true;
+        router.push(route);
       }
-      currentPath = fullPath
+      currentPath = fullPath;
     },
     { sync: true }
-  )
+  );
 
   // sync store on router navigation
   const afterEachUnHook = router.afterEach((to, from) => {
     if (isTimeTraveling) {
-      isTimeTraveling = false
-      return
+      isTimeTraveling = false;
+      return;
     }
-    currentPath = to.fullPath
-    store.commit(moduleName + '/ROUTE_CHANGED', { to, from })
-  })
+    currentPath = to.fullPath;
+    store.commit(moduleName + '/ROUTE_CHANGED', { to, from });
+  });
 
   return function unsync () {
     // On unsync, remove router hook
     if (afterEachUnHook != null) {
-      afterEachUnHook()
+      afterEachUnHook();
     }
 
     // On unsync, remove store watch
     if (storeUnwatch != null) {
-      storeUnwatch()
+      storeUnwatch();
     }
 
     // On unsync, unregister Module with store
-    store.unregisterModule(moduleName)
-  }
-}
+    store.unregisterModule(moduleName);
+  };
+};
 
 function cloneRoute (to, from) {
   const clone = {
@@ -66,9 +69,9 @@ function cloneRoute (to, from) {
     params: to.params,
     fullPath: to.fullPath,
     meta: to.meta
-  }
+  };
   if (from) {
-    clone.from = cloneRoute(from)
+    clone.from = cloneRoute(from);
   }
-  return Object.freeze(clone)
+  return Object.freeze(clone);
 }
