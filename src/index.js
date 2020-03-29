@@ -10,7 +10,8 @@ exports.sync = function (store, router, options) {
       }
     },
     actions: {
-      'push': function (state, params) { router.push(params); }
+      'push': function (state, params) { router.push(params); },
+      'replace': function (state, params) { router.replace(params); }
     }
   });
 
